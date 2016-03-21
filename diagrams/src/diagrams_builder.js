@@ -25,6 +25,22 @@
     /**
      * @param {chevrotain.gast.Rule[]} topRules
      *
+     * @returns {string} -
+     */
+    function buildNavigationMenu(topRules) {
+        var navigationHtml = ""
+
+        topRules.forEach(function(production) {
+            navigationHtml += '<h2 class="sideHeader">' + production.name + '</h2>'
+        })
+
+        return navigationHtml
+    }
+
+
+    /**
+     * @param {chevrotain.gast.Rule[]} topRules
+     *
      * @returns {string} - The htmlText that will render the diagrams
      */
     function buildSyntaxDiagramsText(topRules) {
@@ -178,6 +194,7 @@
     }
 
     return {
+        buildNavigationMenu:        buildNavigationMenu,
         buildSyntaxDiagramsText:    buildSyntaxDiagramsText,
         convertProductionToDiagram: convertProductionToDiagram
     }

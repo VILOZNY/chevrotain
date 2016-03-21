@@ -12,6 +12,7 @@
 <script src='../lib/chevrotain.js'></script>
 <script src='src/diagrams_builder.js'></script>
 <script src='src/diagrams_behavior.js'></script>
+<script src='src/side_pane_behavior.js'></script>
 <script src='src/main.js'></script>
 
 
@@ -33,17 +34,22 @@
 <!--<script src='bower_components/chevrotain/diagrams/src/main.js'></script>-->
 
 <body>
-<div id="diagrams" align="center"></div>
+<div id="navigationMenu" style="background: #5ef84e; float: left; width: 20%; display: inline">
+
+</div>
+
+<div id="diagrams" align="center" style="float: left; width: 80%;"></div>
 
 <!-- TODO: The DUMMY_SAMPLE script should be replaced with your custom grammar script.-->
 <script src='sample/DUMMY_SAMPLE.js'></script>
 
 <script>
     // TODO: replace DUMMY_SAMPLE_PARSER initialization with your parser implementation
-    var parserInstanceToDraw = new DUMMY_SAMPLE_PARSER([]);
+    var parserInstanceToDraw = new DUMMY_SAMPLE_PARSER([])
 
-    var diagramsDiv = document.getElementById("diagrams");
+    var diagramsDiv = document.getElementById("diagrams")
+    var navigationMenu = document.getElementById("navigationMenu")
 
-    main.drawDiagramsFromParserInstance(parserInstanceToDraw, diagramsDiv)
+    main.drawDiagramsFromParserInstance(parserInstanceToDraw, diagramsDiv, navigationMenu)
 </script>
 </body>

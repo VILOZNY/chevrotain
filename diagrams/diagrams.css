@@ -83,3 +83,17 @@ svg {
 svg.railroad-diagram g.non-terminal text {
     cursor: pointer;
 }
+
+
+.sideHeader {
+    font-size: 18px;
+}
+
+
+.scrollSpyVisible {
+    color: #f85bec;
+}
+
+.scrollSpyNonVisible {
+    color: #4250f8;
+}
