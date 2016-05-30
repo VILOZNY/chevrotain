@@ -35,12 +35,10 @@
 <body>
 <div id="diagrams" align="center"></div>
 
-<!-- TODO: The DUMMY_SAMPLE script should be replaced with your custom grammar script.-->
-<script src='sample/DUMMY_SAMPLE.js'></script>
+<script src='../examples/grammars/json/json.js'></script>
 
 <script>
-    // TODO: replace DUMMY_SAMPLE_PARSER initialization with your parser implementation
-    var parserInstanceToDraw = new DUMMY_SAMPLE_PARSER([]);
+    var parserInstanceToDraw = new JsonParser([]);
 
     var diagramsDiv = document.getElementById("diagrams");
 

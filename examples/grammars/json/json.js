@@ -1,82 +1,92 @@
-var chevrotain = require("chevrotain");
-
+(function(root, factory) {
+    if (typeof module === 'object' && module.exports) {
+        // Node. Does not work with strict CommonJS, but
+        // only CommonJS-like environments that support module.exports,
+        // like Node.
+        module.exports = factory(require('chevrotain'));
+    } else {
+        // Browser globals (root is window)
+        root["JsonParser"] = factory(root.chevrotain).JsonParser;
+    }
+}(this, function(chevrotain) {
 // ----------------- lexer -----------------
-var extendToken = chevrotain.extendToken;
-var Lexer = chevrotain.Lexer;
-var Parser = chevrotain.Parser;
+    var extendToken = chevrotain.extendToken;
+    var Lexer = chevrotain.Lexer;
+    var Parser = chevrotain.Parser;
 
 // In ES6, custom inheritance implementation (such as 'extendToken(...)') can be replaced with simple "class X extends Y"...
-var True = extendToken("True", /true/);
-var False = extendToken("False", /false/);
-var Null = extendToken("Null", /null/);
-var LCurly = extendToken("LCurly", /{/);
-var RCurly = extendToken("RCurly", /}/);
-var LSquare = extendToken("LSquare", /\[/);
-var RSquare = extendToken("RSquare", /]/);
-var Comma = extendToken("Comma", /,/);
-var Colon = extendToken("Colon", /:/);
-var StringLiteral = extendToken("StringLiteral", /"(?:[^\\"]+|\\(?:[bfnrtv"\\/]|u[0-9a-fA-F]{4}))*"/);
-var NumberLiteral = extendToken("NumberLiteral", /-?(0|[1-9]\d*)(\.\d+)?([eE][+-]?\d+)?/);
-var WhiteSpace = extendToken("WhiteSpace", /\s+/);
-WhiteSpace.GROUP = Lexer.SKIPPED; // marking WhiteSpace as 'SKIPPED' makes the lexer skip it.
+    var True = extendToken("True", /true/);
+    var False = extendToken("False", /false/);
+    var Null = extendToken("Null", /null/);
+    var LCurly = extendToken("LCurly", /{/);
+    var RCurly = extendToken("RCurly", /}/);
+    var LSquare = extendToken("LSquare", /\[/);
+    var RSquare = extendToken("RSquare", /]/);
+    var Comma = extendToken("Comma", /,/);
+    var Colon = extendToken("Colon", /:/);
+    var StringLiteral = extendToken("StringLiteral", /"(?:[^\\"]+|\\(?:[bfnrtv"\\/]|u[0-9a-fA-F]{4}))*"/);
+    var NumberLiteral = extendToken("NumberLiteral", /-?(0|[1-9]\d*)(\.\d+)?([eE][+-]?\d+)?/);
+    var WhiteSpace = extendToken("WhiteSpace", /\s+/);
+    WhiteSpace.GROUP = Lexer.SKIPPED; // marking WhiteSpace as 'SKIPPED' makes the lexer skip it.
 
-var allTokens = [WhiteSpace, NumberLiteral, StringLiteral, LCurly, RCurly, LSquare, RSquare, Comma, Colon, True, False, Null];
-var JsonLexer = new Lexer(allTokens);
+    var allTokens = [WhiteSpace, NumberLiteral, StringLiteral, LCurly, RCurly, LSquare, RSquare, Comma, Colon, True, False, Null];
+    var JsonLexer = new Lexer(allTokens);
 
 
 // ----------------- parser -----------------
 
-function JsonParser(input) {
-    // invoke super constructor
-    Parser.call(this, input, allTokens, {
-        // by default the error recovery / fault tolerance capabilities are disabled
-        // use this flag to enable them
-        recoveryEnabled: true}
-    );
+    function JsonParser(input) {
+        // invoke super constructor
+        Parser.call(this, input, allTokens, {
+                // by default the error recovery / fault tolerance capabilities are disabled
+                // use this flag to enable them
+                recoveryEnabled: true
+            }
+        );
 
-    // not mandatory, using <$> (or any other sign) to reduce verbosity (this. this. this. this. .......)
-    var $ = this;
+        // not mandatory, using <$> (or any other sign) to reduce verbosity (this. this. this. this. .......)
+        var $ = this;
 
-    this.json = this.RULE("json", function() {
-        // @formatter:off
+        this.json = this.RULE("json", function() {
+            // @formatter:off
         $.OR([
             { ALT: function () { $.SUBRULE($.object) }},
             { ALT: function () { $.SUBRULE($.array) }}
         ]);
         // @formatter:on
-    });
-
-    this.object = this.RULE("object", function() {
-        $.CONSUME(LCurly);
-        $.OPTION(function() {
-            $.SUBRULE($.objectItem);
-            $.MANY(function() {
-                $.CONSUME(Comma);
-                $.SUBRULE2($.objectItem);
-            });
         });
-        $.CONSUME(RCurly);
-    });
 
-    this.objectItem = this.RULE("objectItem", function() {
-        $.CONSUME(StringLiteral);
-        $.CONSUME(Colon);
-        $.SUBRULE($.value);
-    });
+        this.object = this.RULE("object", function() {
+            $.CONSUME(LCurly);
+            $.OPTION(function() {
+                $.SUBRULE($.objectItem);
+                $.MANY(function() {
+                    $.CONSUME(Comma);
+                    $.SUBRULE2($.objectItem);
+                });
+            });
+            $.CONSUME(RCurly);
+        });
 
-    this.array = this.RULE("array", function() {
-        $.CONSUME(LSquare);
-        $.OPTION(function() {
+        this.objectItem = this.RULE("objectItem", function() {
+            $.CONSUME(StringLiteral);
+            $.CONSUME(Colon);
             $.SUBRULE($.value);
-            $.MANY(function() {
-                $.CONSUME(Comma);
-                $.SUBRULE2($.value);
-            });
         });
-        $.CONSUME(RSquare);
-    });
 
-    // @formatter:off
+        this.array = this.RULE("array", function() {
+            $.CONSUME(LSquare);
+            $.OPTION(function() {
+                $.SUBRULE($.value);
+                $.MANY(function() {
+                    $.CONSUME(Comma);
+                    $.SUBRULE2($.value);
+                });
+            });
+            $.CONSUME(RSquare);
+        });
+
+        // @formatter:off
     this.value = this.RULE("value", function () {
         $.OR([
             { ALT: function () { $.CONSUME(StringLiteral) }},
@@ -90,32 +100,37 @@ function JsonParser(input) {
     });
     // @formatter:on
 
-    // very important to call this after all the rules have been defined.
-    // otherwise the parser may not work correctly as it will lack information
-    // derived during the self analysis phase.
-    Parser.performSelfAnalysis(this);
-}
+        // very important to call this after all the rules have been defined.
+        // otherwise the parser may not work correctly as it will lack information
+        // derived during the self analysis phase.
+        Parser.performSelfAnalysis(this);
+    }
 
 // inheritance as implemented in javascript in the previous decade... :(
-JsonParser.prototype = Object.create(Parser.prototype);
-JsonParser.prototype.constructor = JsonParser;
+    JsonParser.prototype = Object.create(Parser.prototype);
+    JsonParser.prototype.constructor = JsonParser;
 
 // ----------------- wrapping it all together -----------------
 
-// TODO: repeating pattern for all grammar examples, factor out ?
-module.exports = function(text) {
-    var fullResult = {};
-    var lexResult = JsonLexer.tokenize(text);
-    fullResult.tokens = lexResult.tokens;
-    fullResult.ignored = lexResult.ignored;
-    fullResult.lexErrors = lexResult.errors;
+    return {
 
-    var parser = new JsonParser(lexResult.tokens);
-    parser.json();
-    fullResult.parseErrors = parser.errors;
+        parseJson: function(text) {
+            var fullResult = {};
+            var lexResult = JsonLexer.tokenize(text);
+            fullResult.tokens = lexResult.tokens;
+            fullResult.ignored = lexResult.ignored;
+            fullResult.lexErrors = lexResult.errors;
 
-    if (fullResult.lexErrors.length >= 1 || fullResult.parseErrors.length >= 1) {
-        throw new Error("sad sad panda")
+            var parser = new JsonParser(lexResult.tokens);
+            parser.json();
+            fullResult.parseErrors = parser.errors;
+
+            if (fullResult.lexErrors.length >= 1 || fullResult.parseErrors.length >= 1) {
+                throw new Error("sad sad panda")
+            }
+            return fullResult;
+        },
+
+        JsonParser: JsonParser
     }
-    return fullResult;
-};
+}));

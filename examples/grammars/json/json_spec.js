@@ -1,5 +1,5 @@
 var assert = require("assert");
-var parseJson = require("./json");
+var parseJson = require("./json").parseJson;
 
 describe('The JSON Grammar', function() {
 
