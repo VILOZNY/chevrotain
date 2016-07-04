@@ -8,7 +8,7 @@
         module.exports = factory(require('chevrotain'));
     } else {
         // Browser globals (root is window)
-        root["JsonParser"] = factory(root.chevrotain).JsonParser;
+        root["HrfParser"] = factory(root.chevrotain).HrfParser;
     }
 }(this, function(chevrotain) {
 // ----------------- lexer -----------------
@@ -61,7 +61,7 @@ WhiteSpace.GROUP = Lexer.SKIPPED; // marking WhiteSpace as 'SKIPPED' makes the l
 
 // ----------------- parser -----------------
 
-function JsonParser(input) {
+function HrfParser(input) {
     // invoke super constructor
     Parser.call(this, input, allTokens, {
         // by default the error recovery / fault tolerance capabilities are disabled
@@ -170,21 +170,21 @@ function JsonParser(input) {
 }
 
 // inheritance as implemented in javascript in the previous decade... :(
-JsonParser.prototype = Object.create(Parser.prototype);
-JsonParser.prototype.constructor = JsonParser;
+    HrfParser.prototype = Object.create(Parser.prototype);
+    HrfParser.prototype.constructor = HrfParser;
 
 // ----------------- wrapping it all together -----------------
 
     return {
 
-        parseJson: function(text) {
+        parseHrf: function(text) {
             var fullResult = {};
             var lexResult = JsonLexer.tokenize(text);
             fullResult.tokens = lexResult.tokens;
             fullResult.ignored = lexResult.ignored;
             fullResult.lexErrors = lexResult.errors;
 
-            var parser = new JsonParser(lexResult.tokens);
+            var parser = new HrfParser(lexResult.tokens);
             parser.singleStatementBoolean();
             fullResult.parseErrors = parser.errors;
 
@@ -194,6 +194,6 @@ JsonParser.prototype.constructor = JsonParser;
             return fullResult;
         },
 
-        JsonParser: JsonParser
+        HrfParser: HrfParser
     }
 }));

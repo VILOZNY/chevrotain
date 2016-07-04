@@ -1,55 +1,55 @@
 var assert = require("assert");
-var parseJson = require("./hrf_json").parseJson;
+var parseHrf = require("./hrf_json").parseHrf;
 
 
 describe('HRF JSON Grammar', function() {
 
     it('HRF - can parse a simple hrf expression without errors', function() {
         //var inputText = '5 is equal to 3';
-//        var lexAndParseResult = parseJson(inputText);
-//        var lexAndParseResult = parseJson(inputText);
+//        var lexAndParseResult = parseHrf(inputText);
+//        var lexAndParseResult = parseHrf(inputText);
 //        assert.equal(lexAndParseResult.lexErrors.length, 0);
 //        assert.equal(lexAndParseResult.parseErrors.length, 0);
 //        assert.equal(lexAndParseResult.parseErrors.length, 0);
 //        inputText = '5 is not equal to 3';
-//        lexAndParseResult = parseJson(inputText);
-//        lexAndParseResult = parseJson(inputText);
+//        lexAndParseResult = parseHrf(inputText);
+//        lexAndParseResult = parseHrf(inputText);
 //        assert.equal(lexAndParseResult.lexErrors.length, 0);
 //        assert.equal(lexAndParseResult.parseErrors.length, 0);
 //        assert.equal(lexAndParseResult.parseErrors.length, 0);
 //       inputText = "'efrat' is equal to 'Daphna'";
 //       inputText = "'efrat' is equal to 'Daphna'";
 //        //inputText = "name of the customer is equal to 'Daphna'";
-//        lexAndParseResult = parseJson(inputText);
-//        lexAndParseResult = parseJson(inputText);
-//        lexAndParseResult = parseJson(inputText);
+//        lexAndParseResult = parseHrf(inputText);
+//        lexAndParseResult = parseHrf(inputText);
+//        lexAndParseResult = parseHrf(inputText);
 //        assert.equal(lexAndParseResult.lexErrors.length, 0);
 //        assert.equal(lexAndParseResult.parseErrors.length, 0);
         // terms
         //var inputText = 'age of the player is not equal to \'efrat\'';
         var inputText = 'age of the player is not equal to 30';
-        var lexAndParseResult = parseJson(inputText);
+        var lexAndParseResult = parseHrf(inputText);
 
         assert.equal(lexAndParseResult.lexErrors.length, 0);
         assert.equal(lexAndParseResult.parseErrors.length, 0);
 
 
         /*(inputText = "\'efrat\' is equal to \'Daphna\'";
-        lexAndParseResult = parseJson(inputText);
+        lexAndParseResult = parseHrf(inputText);
 
         assert.equal(lexAndParseResult.lexErrors.length, 0);
         assert.equal(lexAndParseResult.parseErrors.length, 0);*/
 
         // parser error
         /*inputText = "'efrat' is equal to 3";
-        lexAndParseResult = parseJson(inputText);
+        lexAndParseResult = parseHrf(inputText);
 
         assert.equal(lexAndParseResult.lexErrors.length, 0);
         assert.equal(lexAndParseResult.parseErrors.length, 0);
 
         // lexer error
         inputText = '5 is equall to 3';
-        lexAndParseResult = parseJson(inputText);
+        lexAndParseResult = parseHrf(inputText);
 
         assert.equal(lexAndParseResult.lexErrors.length, 0);
         assert.equal(lexAndParseResult.parseErrors.length, 0);*/
