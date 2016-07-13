@@ -18,17 +18,24 @@
 
     var Identifier = extendToken("Identifier", /[a-zA-z]\w+/);
 
-var dynamicTokens = [{name: "AttrStrTerm", regex: /name of the player/}, {name: "AttrNumberTerm", regex: /age of the player/}];
+var dynamicTokens = [{name: "AttrStrTerm", regex: /name of the player/},
+                     {name: "AttrNumberTerm", regex: /age of the player/},
+                     {name: "AttrStrCollectionTerm", regex: /label of all payment_rcs of all payments of all players/},
+                     {name: "AttrNumberCollectionTerm", regex: /amount of all payment_rcs of all payments of all players/}];
 
     // tbd - loop on array and prepare array of extendToken, push to allTokens order improtand 
 
 
-// In ES6, custom inheritance implementation (such as 'extendToken(...)') can be replaced with simple "class X extends Y"...
+// In ES6, custom inheritance implementation (such as 'extendToken(...)') can be replaced with simple "class X extends Y"...var True = extendToken("True", /true/);
+var And = extendToken("And", /and/);
+var Or = extendToken("Or", /or/);
 var True = extendToken("True", /true/);
 var False = extendToken("False", /false/);
 var Null = extendToken("Null", /null/);
 var IsEqual = extendToken("IsEqual", /is equal to/);
 var IsNotEqual = extendToken("IsNotEqual", /is not equal to/);
+var IsLike = extendToken("IsLike", /is like/);
+var IsNotLike = extendToken("IsNotLike", /is not like/);
 /*var LCurly = extendToken("LCurly", /{/);
 var RCurly = extendToken("RCurly", /}/);
 var LSquare = extendToken("LSquare", /\[/);
@@ -38,6 +45,14 @@ var Colon = extendToken("Colon", /:/);
 var StringLiteral = extendToken("StringLiteral", /'(?:[^\\']+|\\(?:[bfnrtv'\\/]|u[0-9a-fA-F]{4}))*'/);
 //var StringLiteral = extendToken("StringLiteral", /"(?:[^\\"]+|\\(?:[bfnrtv"\\/]|u[0-9a-fA-F]{4}))*"/);
 var NumberLiteral = extendToken("NumberLiteral", /-?(0|[1-9]\d*)(\.\d+)?([eE][+-]?\d+)?/);
+var Avg = extendToken("Avg", /average of/);
+var Sum = extendToken("Sum", /sum of/);
+var Where = extendToken("Where", /where/);
+var FilterBy = extendToken("FilterBy", /filter by/);
+var GroupBy = extendToken("GroupBy", /group by/);
+var Per = extendToken("Per", /per/);
+var LBr = extendToken("LBr", /\(/);
+var RBr = extendToken("RBr", /\)/);
 var WhiteSpace = extendToken("WhiteSpace", /\s+/);
 WhiteSpace.GROUP = Lexer.SKIPPED; // marking WhiteSpace as 'SKIPPED' makes the lexer skip it.
 
@@ -50,7 +65,7 @@ WhiteSpace.GROUP = Lexer.SKIPPED; // marking WhiteSpace as 'SKIPPED' makes the l
     for (idx = 0; idx < dynamicTokens.length; idx++) {
         allTokens.push(extendToken(dynamicTokens[idx].name, dynamicTokens[idx].regex, Identifier));
     }
-    allTokens.push.apply(allTokens, [NumberLiteral, StringLiteral,  Comma, Colon, True, False, Null, IsEqual, IsNotEqual]); //apply();
+    allTokens.push.apply(allTokens, [And, Or, NumberLiteral, StringLiteral,  Comma, Colon, True, False, Null, IsEqual, IsNotEqual, IsLike, IsNotLike, Avg, Sum, Where, FilterBy, GroupBy, Per, LBr, RBr]); //apply();
     allTokens.push(WhiteSpace);
     allTokens.push(Identifier);
 
@@ -72,18 +87,64 @@ function HrfParser(input) {
     // not mandatory, using <$> (or any other sign) to reduce verbosity (this. this. this. this. .......)
     var $ = this;
 
+    this.statement = this.RULE("statement", function() {
+        // @formatter:off
+        $.OR([
+            { ALT: function () { $.SUBRULE($.ruleAndStatement); }},
+            { ALT: function () {  $.SUBRULE($.singleStatement);}}
+        ]);
+
+
+    });
+
+    this.singleStatement = this.RULE("singleStatement", function() {
+        // @formatter:off
+        $.OR([
+            { ALT: function () { $.SUBRULE($.ruleValueClause); }},
+            { ALT: function () {  $.SUBRULE($.ruleAggregationFunction);}}
+        ]);
+
+
+    });
+
+
+    this.ruleAndStatement = this.RULE("ruleAndStatement", function() {
+        // @formatter:off
+        $.SUBRULE($.ruleOrStatement);
+        $.MANY(function() {
+                    $.CONSUME(And);
+                    $.SUBRULE2($.ruleOrStatement);
+                });
+
+
+    });
+
+    this.ruleOrStatement = this.RULE("ruleOrStatement", function() {
+        // @formatter:off
+        $.SUBRULE($.singleStatementBoolean);
+        $.MANY(function() {
+                    $.CONSUME(Or);
+                    $.SUBRULE2($.singleStatementBoolean);
+                });
+
+
+    });
+
+
     this.singleStatementBoolean = this.RULE("singleStatementBoolean", function() {
         // @formatter:off
-        $.SUBRULE($.ruleValueClause);
+        $.SUBRULE($.singleStatement);
         $.SUBRULE($.ruleComparisonOption);
-        $.SUBRULE2($.ruleValueClause);
+        $.SUBRULE2($.singleStatement);
         // @formatter:on
     });
 
     this.ruleComparisonOption = this.RULE("ruleComparisonOption", function() {
         $.OR([
             { ALT: function () { $.CONSUME(IsEqual) }},
-            { ALT: function () { $.CONSUME(IsNotEqual) }}
+            { ALT: function () { $.CONSUME(IsNotEqual) }},
+            { ALT: function () { $.CONSUME(IsLike) }},
+            { ALT: function () { $.CONSUME(IsNotLike) }}
 
         ]);
 
@@ -102,62 +163,57 @@ function HrfParser(input) {
 
     });
 
-    /*this.singleStatementBoolean = this.RULE("singleStatementBoolean", function() {
-        // @formatter:off
-        $.OR([
-            { ALT: function () { $.SUBRULE($.ruleNumericSingleStatementComparison) }},
-            { ALT: function () { $.SUBRULE($.ruleStringSingleStatementComparison) }}
-        ]);
-        // @formatter:on
-    });*/
-
-   /* this.ruleNumericSingleStatementComparison = this.RULE("ruleNumericSingleStatementComparison", function() {
-        $.SUBRULE($.ruleNumericClause);
-        $.SUBRULE($.ruleNumericComparisonOption);
-        $.SUBRULE2($.ruleNumericClause);
-
-    });*/
-
-
-
-   /* this.ruleNumericClause = this.RULE("ruleNumericClause", function() {
+    this.ruleFilterClause = this.RULE("ruleFilterClause", function() {
         //$.CONSUME(NumberLiteral);
         $.OR([
-            { ALT: function () { $.CONSUME(Identifier) }},
-            { ALT: function () { $.CONSUME(NumberLiteral) }}
-
+            { ALT: function () { $.CONSUME(FilterBy) }},
+            { ALT: function () { $.CONSUME(Where) }}
+        ]);
+        $.OR2([
+            { ALT: function () { $.CONSUME(LBr); $.SUBRULE($.ruleAndStatement); $.CONSUME(RBr);}},
+            { ALT: function () {  $.SUBRULE2($.ruleAndStatement);}}
         ]);
 
-
-    });*/
-
-
-
-    /*this.ruleNumericComparisonOption = this.RULE("ruleNumericComparisonOption", function() {
-        $.OR([
-            { ALT: function () { $.CONSUME(IsEqual) }},
-            { ALT: function () { $.CONSUME(IsNotEqual) }}
-
-        ]);
 
     });
 
-    this.ruleStringSingleStatementComparison = this.RULE("ruleStringSingleStatementComparison", function() {
-        $.SUBRULE($.ruleStringClause);
-        $.SUBRULE($.ruleNumericComparisonOption);
-        $.SUBRULE2($.ruleStringClause);
-
-    });*/
-
-    /*this.ruleStringClause = this.RULE("ruleStringClause", function() {
-        //$.CONSUME(StringLiteral);
+    this.groupByClause = this.RULE("groupByClause", function() {
+        //$.CONSUME(NumberLiteral);
         $.OR([
-            { ALT: function () { $.CONSUME(Identifier) }},
-            { ALT: function () { $.CONSUME(StringLiteral) }}
-
+            { ALT: function () { $.CONSUME(GroupBy) }},
+            { ALT: function () { $.CONSUME(Per) }}
         ]);
+        $.CONSUME(Identifier);
+        $.MANY(function() {
+            $.CONSUME(Comma);
+            $.CONSUME2(Identifier);
+        });
 
-    });*/
+
+
+    });
+
+
+    this.ruleAggregationFunction = this.RULE("ruleAggregationFunction", function() {
+        // @formatter:off
+        $.OR([
+            { ALT: function () { $.CONSUME(Avg) }},
+            { ALT: function () { $.CONSUME(Sum) }}
+        ]);
+        $.OR2([
+            { ALT: function () { $.CONSUME(LBr); $.SUBRULE($.ruleValueClause); $.CONSUME(RBr);}},
+            { ALT: function () {  $.SUBRULE2($.ruleValueClause);}}
+        ]);
+        // $.SUBRULE($.groupByClause); => TBD - why causes an error in my grammar?
+        // $.SUBRULE($.ruleFilterClause); => TBD - why causes an error in my grammar?
+        // @formatter:on
+    });
+
+
+
+
+
+
 
 
 
@@ -183,9 +239,8 @@ function HrfParser(input) {
             fullResult.tokens = lexResult.tokens;
             fullResult.ignored = lexResult.ignored;
             fullResult.lexErrors = lexResult.errors;
-
             var parser = new HrfParser(lexResult.tokens);
-            parser.singleStatementBoolean();
+            parser.statement();
             fullResult.parseErrors = parser.errors;
 
             if (fullResult.lexErrors.length >= 1 || fullResult.parseErrors.length >= 1) {

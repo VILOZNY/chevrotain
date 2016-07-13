@@ -34,6 +34,63 @@ describe('HRF JSON Grammar', function() {
         assert.equal(lexAndParseResult.parseErrors.length, 0);
 
 
+        // valid
+        inputText = 'average of amount of all payment_rcs of all payments of all players is equal to 2';
+        lexAndParseResult = parseHrf(inputText);
+
+        assert.equal(lexAndParseResult.lexErrors.length, 0);
+        assert.equal(lexAndParseResult.parseErrors.length, 0);
+
+
+        // valid only by grammer, by type  check => error
+        inputText = 'average of label of all payment_rcs of all payments of all players is equal to 2';
+        lexAndParseResult = parseHrf(inputText);
+
+        assert.equal(lexAndParseResult.lexErrors.length, 0);
+        assert.equal(lexAndParseResult.parseErrors.length, 0);
+
+        //var inputText = 'age of the player is not equal to \'efrat\'';
+        var inputText = 'name of the player is not like \'efrat\'';
+        var lexAndParseResult = parseHrf(inputText);
+
+        assert.equal(lexAndParseResult.lexErrors.length, 0);
+        assert.equal(lexAndParseResult.parseErrors.length, 0);
+
+        // invalid, second phase, like valid only for strings
+        inputText = 'average of label of all payment_rcs of all payments of all players is like 2';
+        lexAndParseResult = parseHrf(inputText);
+
+        assert.equal(lexAndParseResult.lexErrors.length, 0);
+        assert.equal(lexAndParseResult.parseErrors.length, 0);
+
+
+        // valid only by grammer, by type  check => error
+        inputText = 'age of the player is equal to 8 and average of amount of all payment_rcs of all payments of all players is equal' +
+            ' to 2 or name of the player is not equal to \'efrat\'';
+        lexAndParseResult = parseHrf(inputText);
+
+        assert.equal(lexAndParseResult.lexErrors.length, 0);
+        assert.equal(lexAndParseResult.parseErrors.length, 0);
+
+        // valid case ,
+       /* inputText = 'average of amount of all payment_rcs of all payments of all players group by age of the player' +
+            ' is equal' +
+            ' to 2 or name of the player is not equal to \'efrat\'';
+        lexAndParseResult = parseHrf(inputText);
+
+        assert.equal(lexAndParseResult.lexErrors.length, 0);
+        assert.equal(lexAndParseResult.parseErrors.length, 0);
+
+        // invalid (second phase)
+        inputText =  inputText = 'average of amount of all payment_rcs of all payments of all players group by name of the player' +
+            ' is equal' +
+            ' to 2 or name of the player is not equal to \'efrat\'';
+        lexAndParseResult = parseHrf(inputText);
+
+        assert.equal(lexAndParseResult.lexErrors.length, 0);
+        assert.equal(lexAndParseResult.parseErrors.length, 0);*/
+
+
         /*(inputText = "\'efrat\' is equal to \'Daphna\'";
         lexAndParseResult = parseHrf(inputText);
 
