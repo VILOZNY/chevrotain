@@ -45,9 +45,14 @@ var Colon = extendToken("Colon", /:/);
 var StringLiteral = extendToken("StringLiteral", /'(?:[^\\']+|\\(?:[bfnrtv'\\/]|u[0-9a-fA-F]{4}))*'/);
 //var StringLiteral = extendToken("StringLiteral", /"(?:[^\\"]+|\\(?:[bfnrtv"\\/]|u[0-9a-fA-F]{4}))*"/);
 var NumberLiteral = extendToken("NumberLiteral", /-?(0|[1-9]\d*)(\.\d+)?([eE][+-]?\d+)?/);
+// functions tokens
 var Avg = extendToken("Avg", /average of/);
 var Sum = extendToken("Sum", /sum of/);
+var Concatenate = extendToken("Concatenate", /concatenate/);
+///////////////////////////////////////////////////////////////
 var Where = extendToken("Where", /where/);
+
+
 var FilterBy = extendToken("FilterBy", /filter by/);
 var GroupBy = extendToken("GroupBy", /group by/);
 var Per = extendToken("Per", /per/);
@@ -65,7 +70,7 @@ WhiteSpace.GROUP = Lexer.SKIPPED; // marking WhiteSpace as 'SKIPPED' makes the l
     for (idx = 0; idx < dynamicTokens.length; idx++) {
         allTokens.push(extendToken(dynamicTokens[idx].name, dynamicTokens[idx].regex, Identifier));
     }
-    allTokens.push.apply(allTokens, [And, Or, NumberLiteral, StringLiteral,  Comma, Colon, True, False, Null, IsEqual, IsNotEqual, IsLike, IsNotLike, Avg, Sum, Where, FilterBy, GroupBy, Per, LBr, RBr]); //apply();
+    allTokens.push.apply(allTokens, [And, Or, NumberLiteral, StringLiteral,  Comma, Colon, True, False, Null, IsEqual, IsNotEqual, IsLike, IsNotLike, Avg, Sum, Concatenate, Where, FilterBy, GroupBy, Per, LBr, RBr]); //apply();
     allTokens.push(WhiteSpace);
     allTokens.push(Identifier);
 
@@ -101,7 +106,9 @@ function HrfParser(input) {
         // @formatter:off
         $.OR([
             { ALT: function () { $.SUBRULE($.ruleValueClause); }},
-            { ALT: function () {  $.SUBRULE($.ruleAggregationFunction);}}
+            { ALT: function () {  $.SUBRULE($.ruleAggregationFunction);}}/*,
+            { ALT: function () {  $.SUBRULE($.ruleConcatenateFunction);}}*/ // TBD - grammar errors
+
         ]);
 
 
@@ -206,6 +213,19 @@ function HrfParser(input) {
         ]);
         // $.SUBRULE($.groupByClause); => TBD - why causes an error in my grammar?
         // $.SUBRULE($.ruleFilterClause); => TBD - why causes an error in my grammar?
+        // @formatter:on
+    });
+
+    this.ruleConcatenateFunction = this.RULE("ruleConcatenateFunction", function() {
+        // @formatter:off
+        $.CONSUME(Concatenate);
+        $.CONSUME(LBr);
+        $.SUBRULE($.ruleValueClause);
+        $.MANY(function() {
+            $.CONSUME(Comma);
+           $.SUBRULE2($.ruleValueClause);
+        });
+        $.CONSUME(RBr);
         // @formatter:on
     });
 
