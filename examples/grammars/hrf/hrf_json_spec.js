@@ -33,7 +33,18 @@ describe('HRF JSON Grammar', function() {
         assert.equal(lexAndParseResult.lexErrors.length, 0);
         assert.equal(lexAndParseResult.parseErrors.length, 0);
 
+        // valid by grammar., no valid by semantic
+        inputText = 'age of the player is not equal to 30 and 3 + 5 * 2 is equal to age of the player';
+        lexAndParseResult = parseHrf(inputText);
 
+
+        // valid by grammar., no valid by semantic
+        inputText = 'age of the player is not equal to 30 and 3 + 5*2';
+        lexAndParseResult = parseHrf(inputText);
+
+
+        assert.equal(lexAndParseResult.lexErrors.length, 0);
+        assert.equal(lexAndParseResult.parseErrors.length, 0);
         // valid
         inputText = 'average of amount of all payment_rcs of all payments of all players is equal to 2';
         lexAndParseResult = parseHrf(inputText);

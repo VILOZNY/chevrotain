@@ -25,6 +25,10 @@
 
 
 // In ES6, custom inheritance implementation (such as 'extendToken(...)') can be replaced with simple "class X extends Y"...var True = extendToken("True", /true/);
+    var Plus = extendToken("Plus", /\+/);
+    var Minus = extendToken("Minus", /-/);
+    var Div = extendToken("Div", /\\/);
+    var Mult = extendToken("Mult", /\*/);
     var And = extendToken("And", /and/);
     var Or = extendToken("Or", /or/);
     var True = extendToken("True", /true/);
@@ -68,7 +72,7 @@
     for (idx = 0; idx < dynamicTokens.length; idx++) {
         allTokens.push(extendToken(dynamicTokens[idx].name, dynamicTokens[idx].regex, Identifier));
     }
-    allTokens.push.apply(allTokens, [And, Or, NumberLiteral, StringLiteral, Comma, Colon, True, False, Null, IsEqual, IsNotEqual, IsLike, IsNotLike, Avg, Sum, Concatenate, Where, FilterBy, GroupBy, Per, LBr, RBr]); //apply();
+    allTokens.push.apply(allTokens, [Plus, Minus, Div, Mult, And, Or, NumberLiteral, StringLiteral, Comma, Colon, True, False, Null, IsEqual, IsNotEqual, IsLike, IsNotLike, Avg, Sum, Concatenate, Where, FilterBy, GroupBy, Per, LBr, RBr]); //apply();
     allTokens.push(WhiteSpace);
     allTokens.push(Identifier);
 
@@ -89,24 +93,19 @@
         // not mandatory, using <$> (or any other sign) to reduce verbosity (this. this. this. this. .......)
         var $ = this;
 
-        this.statement = this.RULE("statement", function() {
+        this.expression = this.RULE("statement", function() {
 
-            $.SUBRULE($.ruleAndStatement);
-
-            /* $.OR([
-             { ALT: function () { $.SUBRULE($.ruleAndStatement); }},
-             { ALT: function () {  $.SUBRULE($.singleStatement);}}
-             ]);*/
-
+            $.SUBRULE($.andExpression);
 
         });
 
-        this.singleStatement = this.RULE("singleStatement", function() {
+        this.element = this.RULE("element", function() {
 
             $.OR([
                 {ALT: function() { $.SUBRULE($.ruleValueClause); }},
                 {ALT: function() { $.SUBRULE($.ruleAggregationFunction);}},
                 {ALT: function() { $.SUBRULE($.ruleConcatenateFunction);}}
+                //{ALT: function() { $.CONSUME(LBr); $.SUBRULE($.andExpression);  $.CONSUME(RBr);}}// TBD - grammar error
 
             ]);
 
@@ -114,38 +113,81 @@
         });
 
 
-        this.ruleAndStatement = this.RULE("ruleAndStatement", function() {
+        this.andExpression = this.RULE("andExpression", function() {
 
-            $.SUBRULE($.ruleOrStatement);
+            $.SUBRULE($.orExpression);
             $.MANY(function() {
                 $.CONSUME(And);
-                $.SUBRULE2($.ruleOrStatement);
+                $.SUBRULE2($.orExpression);
             });
 
 
         });
 
-        this.ruleOrStatement = this.RULE("ruleOrStatement", function() {
+        this.orExpression = this.RULE("orExpression", function() {
 
-            $.SUBRULE($.singleStatementBoolean);
+            $.SUBRULE($.relationalExpression);
             $.MANY(function() {
                 $.CONSUME(Or);
-                $.SUBRULE2($.singleStatementBoolean);
+                $.SUBRULE2($.relationalExpression);
             });
 
 
         });
 
 
-        this.singleStatementBoolean = this.RULE("singleStatementBoolean", function() {
+        this.relationalExpression = this.RULE("relationalExpression", function() {
 
-            $.SUBRULE($.singleStatement);
+            $.SUBRULE($.addingExpression);
             $.OPTION(function() {
                 $.SUBRULE($.ruleComparisonOption);
-                $.SUBRULE2($.singleStatement);
+                $.SUBRULE2($.addingExpression);
             });
 
             // @formatter:on
+        });
+
+        this.addingExpression = this.RULE("addingExpression", function() {
+
+            $.SUBRULE($.multExpression);
+            $.MANY(function() {
+                $.OR([
+                    {ALT: function() { $.CONSUME(Minus) }},
+                    {ALT: function() { $.CONSUME(Plus) }}
+                ]);
+                $.SUBRULE2($.multExpression);
+            });
+
+
+        });
+
+        this.multExpression = this.RULE("multExpression", function() {
+
+            $.SUBRULE($.signExpression);
+            $.MANY(function() {
+
+                $.OR([
+                    {ALT: function() { $.CONSUME(Mult) }},
+                    {ALT: function() { $.CONSUME(Div) }}
+                ]);
+                $.SUBRULE2($.signExpression);
+            });
+
+
+        });
+
+        this.signExpression = this.RULE("signExpression", function() {
+            $.OPTION(function() {
+                $.OR([
+                    {ALT: function() { $.CONSUME(Minus) }},
+                    {ALT: function() { $.CONSUME(Plus) }}
+
+                ]);
+            });
+            $.SUBRULE($.element);
+
+
+
         });
 
         this.ruleComparisonOption = this.RULE("ruleComparisonOption", function() {
@@ -158,6 +200,19 @@
             ]);
 
         });
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
         this.ruleValueClause = this.RULE("ruleValueClause", function() {
@@ -182,11 +237,11 @@
                 {
                     ALT: function() {
                         $.CONSUME(LBr);
-                        $.SUBRULE($.ruleAndStatement);
+                        $.SUBRULE($.andExpression);
                         $.CONSUME(RBr);
                     }
                 },
-                {ALT: function() { $.SUBRULE2($.ruleAndStatement);}}
+                {ALT: function() { $.SUBRULE2($.andExpression);}}
             ]);
 
 
@@ -274,7 +329,7 @@
             fullResult.ignored = lexResult.ignored;
             fullResult.lexErrors = lexResult.errors;
             var parser = new HrfParser(lexResult.tokens);
-            parser.statement();
+            parser.expression();
             fullResult.parseErrors = parser.errors;
 
             if (fullResult.lexErrors.length >= 1 || fullResult.parseErrors.length >= 1) {
