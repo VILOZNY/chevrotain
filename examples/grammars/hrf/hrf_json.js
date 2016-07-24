@@ -102,7 +102,7 @@
         this.expressionElement = this.RULE("expressionElement", function() {
 
             $.OR([
-                {ALT: function() { $.SUBRULE($.ruleValueClause); }},
+                {ALT: function() { $.SUBRULE($.valueClause); }},
                 {ALT: function() { $.SUBRULE($.expressionFunctionElement);}}
               // {ALT: function() { $.CONSUME(LBr); $.SUBRULE($.expression);  $.CONSUME(RBr);}}// TBD - grammar error
 
@@ -115,8 +115,8 @@
 
             $.OR([
 
-                {ALT: function() { $.SUBRULE($.ruleAggregationFunction);}},
-                {ALT: function() { $.SUBRULE($.ruleConcatenateFunction);}}
+                {ALT: function() { $.SUBRULE($.aggregationFunction);}},
+                {ALT: function() { $.SUBRULE($.concatenateFunction);}}
             ]);
 
 
@@ -150,7 +150,7 @@
 
             $.SUBRULE($.addingExpression);
             $.OPTION(function() {
-                $.SUBRULE($.ruleComparisonOption);
+                $.SUBRULE($.relationalOption);
                 $.SUBRULE2($.addingExpression);
             });
 
@@ -200,7 +200,7 @@
 
         });
 
-        this.ruleComparisonOption = this.RULE("ruleComparisonOption", function() {
+        this.relationalOption = this.RULE("relationalOption", function() {
             $.OR([
                 {ALT: function() { $.CONSUME(IsEqual) }},
                 {ALT: function() { $.CONSUME(IsNotEqual) }},
@@ -225,7 +225,7 @@
 
 
 
-        this.ruleValueClause = this.RULE("ruleValueClause", function() {
+        this.valueClause = this.RULE("valueClause", function() {
             //$.CONSUME(NumberLiteral);
             $.OR([
                 {ALT: function() { $.CONSUME(Identifier) }},
@@ -273,7 +273,7 @@
         });
 
 
-        this.ruleAggregationFunction = this.RULE("ruleAggregationFunction", function() {
+        this.aggregationFunction = this.RULE("aggregationFunction", function() {
 
             $.OR([
                 {ALT: function() { $.CONSUME(Avg) }},
@@ -283,11 +283,11 @@
                 {
                     ALT: function() {
                         $.CONSUME(LBr);
-                        $.SUBRULE($.ruleValueClause);
+                        $.SUBRULE($.valueClause);
                         $.CONSUME(RBr);
                     }
                 },
-                {ALT: function() { $.SUBRULE2($.ruleValueClause);}}
+                {ALT: function() { $.SUBRULE2($.valueClause);}}
             ]);
             $.OPTION(function() {
                 $.SUBRULE($.ruleFilterClause);
@@ -302,14 +302,14 @@
             // @formatter:on
         });
 
-        this.ruleConcatenateFunction = this.RULE("ruleConcatenateFunction", function() {
+        this.concatenateFunction = this.RULE("concatenateFunction", function() {
 
             $.CONSUME(Concatenate);
             $.CONSUME(LBr);
-            $.SUBRULE($.ruleValueClause);
+            $.SUBRULE($.valueClause);
             $.MANY(function() {
                 $.CONSUME(Comma);
-                $.SUBRULE2($.ruleValueClause);
+                $.SUBRULE2($.valueClause);
             });
             $.CONSUME(RBr);
             // @formatter:on
