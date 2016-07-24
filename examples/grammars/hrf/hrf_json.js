@@ -93,42 +93,52 @@
         // not mandatory, using <$> (or any other sign) to reduce verbosity (this. this. this. this. .......)
         var $ = this;
 
-        this.expression = this.RULE("statement", function() {
+        this.expression = this.RULE("expression", function() {
 
-            $.SUBRULE($.andExpression);
+            $.SUBRULE($.orExpression);
 
         });
 
-        this.element = this.RULE("element", function() {
+        this.expressionElement = this.RULE("expressionElement", function() {
 
             $.OR([
                 {ALT: function() { $.SUBRULE($.ruleValueClause); }},
-                {ALT: function() { $.SUBRULE($.ruleAggregationFunction);}},
-                {ALT: function() { $.SUBRULE($.ruleConcatenateFunction);}}
-                //{ALT: function() { $.CONSUME(LBr); $.SUBRULE($.andExpression);  $.CONSUME(RBr);}}// TBD - grammar error
+                {ALT: function() { $.SUBRULE($.expressionFunctionElement);}}
+              // {ALT: function() { $.CONSUME(LBr); $.SUBRULE($.expression);  $.CONSUME(RBr);}}// TBD - grammar error
 
             ]);
 
 
         });
 
+        this.expressionFunctionElement = this.RULE("expressionFunctionElement", function() {
 
-        this.andExpression = this.RULE("andExpression", function() {
+            $.OR([
 
-            $.SUBRULE($.orExpression);
+                {ALT: function() { $.SUBRULE($.ruleAggregationFunction);}},
+                {ALT: function() { $.SUBRULE($.ruleConcatenateFunction);}}
+            ]);
+
+
+        });
+
+
+        this.orExpression = this.RULE("orExpression", function() {
+
+            $.SUBRULE($.andExpression);
             $.MANY(function() {
-                $.CONSUME(And);
-                $.SUBRULE2($.orExpression);
+                $.CONSUME(Or);
+                $.SUBRULE2($.andExpression);
             });
 
 
         });
 
-        this.orExpression = this.RULE("orExpression", function() {
+        this.andExpression = this.RULE("andExpression", function() {
 
             $.SUBRULE($.relationalExpression);
             $.MANY(function() {
-                $.CONSUME(Or);
+                $.CONSUME(And);
                 $.SUBRULE2($.relationalExpression);
             });
 
@@ -184,7 +194,7 @@
 
                 ]);
             });
-            $.SUBRULE($.element);
+            $.SUBRULE($.expressionElement);
 
 
 
