@@ -103,8 +103,11 @@
 
             $.OR([
                 {ALT: function() { $.SUBRULE($.valueClause); }},
-                {ALT: function() { $.SUBRULE($.expressionFunctionElement);}}
-              // {ALT: function() { $.CONSUME(LBr); $.SUBRULE($.expression);  $.CONSUME(RBr);}}// TBD - grammar error
+                {ALT: function() { $.SUBRULE($.expressionFunctionElement);}},
+                {ALT: function() {
+                    $.CONSUME(LBr);
+                    $.SUBRULE($.expression);
+                    $.CONSUME(RBr);}}// TBD - grammar error
 
             ]);
 
@@ -243,15 +246,15 @@
                 {ALT: function() { $.CONSUME(FilterBy) }},
                 {ALT: function() { $.CONSUME(Where) }}
             ]);
-            $.OR2([
+            $.OPTION([
                 {
                     ALT: function() {
                         $.CONSUME(LBr);
-                        $.SUBRULE($.andExpression);
+                        $.SUBRULE($.expression);
                         $.CONSUME(RBr);
                     }
-                },
-                {ALT: function() { $.SUBRULE2($.andExpression);}}
+                }/*,
+                {ALT: function() { $.SUBRULE2($.andExpression);}}*/
             ]);
 
 
