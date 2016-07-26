@@ -246,16 +246,9 @@
                 {ALT: function() { $.CONSUME(FilterBy) }},
                 {ALT: function() { $.CONSUME(Where) }}
             ]);
-            $.OPTION([
-                {
-                    ALT: function() {
-                        $.CONSUME(LBr);
-                        $.SUBRULE($.expression);
-                        $.CONSUME(RBr);
-                    }
-                }/*,
-                {ALT: function() { $.SUBRULE2($.andExpression);}}*/
-            ]);
+
+            $.SUBRULE($.expression);
+
 
 
         });
