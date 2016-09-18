@@ -4,6 +4,33 @@ var parseHrf = require("./hrf_json").parseHrf;
 
 describe('HRF JSON Grammar', function() {
 
+     it('HRF - parse,  simple', function() {
+
+             // terms
+             //var inputText = 'age of the player is not equal to \'efrat\'';
+             var inputText = "1 is equal to 2";
+             var lexAndParseResult = parseHrf(inputText);
+
+             assert.equal(lexAndParseResult.lexErrors.length, 0);
+             assert.equal(lexAndParseResult.parseErrors.length, 0);
+         }
+
+     );
+
+
+    it('HRF - parse,  simple,  valid syntax + arithmetic', function() {
+
+            // terms
+            //var inputText = 'age of the player is not equal to \'efrat\'';
+            var inputText = "1*2/3 + 3*5 - 7 - 8*9*10 is equal to 11";
+            var lexAndParseResult = parseHrf(inputText);
+
+            assert.equal(lexAndParseResult.lexErrors.length, 0);
+            assert.equal(lexAndParseResult.parseErrors.length, 0);
+        }
+
+    );
+
     it('HRF - parse,  simple,  valid syntax + semantic', function() {
 
         // terms
@@ -16,6 +43,7 @@ describe('HRF JSON Grammar', function() {
         }
 
     );
+
     it('HRF - parse,  andExpression with aggregation, valid syntax + semantic', function() {
 
         // valid by grammar., no valid by semantic

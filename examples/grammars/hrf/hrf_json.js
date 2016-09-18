@@ -1,3 +1,4 @@
+
 (function(root, factory) {
     if (typeof module === 'object' && module.exports) {
         // Node. Does not work with strict CommonJS, but
@@ -9,6 +10,7 @@
         root["HrfParser"] = factory(root.chevrotain).HrfParser;
     }
 }(this, function(chevrotain) {
+    var astNodes = require('./hrf_AstNodes');
 // ----------------- lexer -----------------
     var extendToken = chevrotain.extendToken;
     var Lexer = chevrotain.Lexer;
@@ -27,7 +29,7 @@
 // In ES6, custom inheritance implementation (such as 'extendToken(...)') can be replaced with simple "class X extends Y"...var True = extendToken("True", /true/);
     var Plus = extendToken("Plus", /\+/);
     var Minus = extendToken("Minus", /-/);
-    var Div = extendToken("Div", /\\/);
+    var Div = extendToken("Div", /\//);
     var Mult = extendToken("Mult", /\*/);
     var And = extendToken("And", /and/);
     var Or = extendToken("Or", /or/);
@@ -95,122 +97,189 @@
 
         this.expression = this.RULE("expression", function() {
 
-            $.SUBRULE($.orExpression);
+            return $.SUBRULE($.orExpression);
 
         });
 
         this.expressionElement = this.RULE("expressionElement", function() {
-
+            var exprElementNode;
             $.OR([
-                {ALT: function() { $.SUBRULE($.valueClause); }},
-                {ALT: function() { $.SUBRULE($.expressionFunctionElement);}},
+                {ALT: function() { exprElementNode = $.SUBRULE($.valueClause); }},
+                {ALT: function() { exprElementNode = $.SUBRULE($.expressionFunctionElement);}},
                 {ALT: function() {
                     $.CONSUME(LBr);
-                    $.SUBRULE($.expression);
+                    exprElementNode = $.SUBRULE($.expression);
                     $.CONSUME(RBr);}}// TBD - grammar error
 
             ]);
 
-
+            return exprElementNode;
         });
 
         this.expressionFunctionElement = this.RULE("expressionFunctionElement", function() {
-
+            var functionNode;
             $.OR([
 
-                {ALT: function() { $.SUBRULE($.aggregationFunction);}},
-                {ALT: function() { $.SUBRULE($.concatenateFunction);}}
-            ]);
+                {ALT: function() { $.SUBRULE($.aggregationFunction); functionNode = new astNodes.AggFunctionNode("TBD aggregationFunction");}},
+                {ALT: function() { $.SUBRULE($.concatenateFunction); functionNode = new astNodes.FunctionNode("TBD concatenateFunction");}}
 
+            ] );
 
+            return functionNode;
         });
 
 
         this.orExpression = this.RULE("orExpression", function() {
-
-            $.SUBRULE($.andExpression);
+            var logicalNode = null;
+            var leftAndNode;
+            leftAndNode =  $.SUBRULE($.andExpression);
             $.MANY(function() {
                 $.CONSUME(Or);
-                $.SUBRULE2($.andExpression);
-            });
 
+                logicalNode = new astNodes.LogicalExprNode("or");
+                logicalNode.addChild(leftAndNode);
+                logicalNode.addChild( $.SUBRULE2($.andExpression));
+            });
+            if(logicalNode )
+                return logicalNode;
+            // shrink
+            return leftAndNode;
 
         });
 
         this.andExpression = this.RULE("andExpression", function() {
 
-            $.SUBRULE($.relationalExpression);
+            var logicalNode = null;
+            var leftRelationalNode;
+            leftRelationalNode = $.SUBRULE($.relationalExpression);
             $.MANY(function() {
                 $.CONSUME(And);
-                $.SUBRULE2($.relationalExpression);
+                logicalNode = new astNodes.LogicalExprNode("and");
+                logicalNode.addChild(leftRelationalNode);
+                logicalNode.addChild($.SUBRULE2($.relationalExpression));
             });
 
-
+            if(logicalNode )
+                return logicalNode;
+            // shrink
+            return leftRelationalNode;
         });
 
 
         this.relationalExpression = this.RULE("relationalExpression", function() {
 
-            $.SUBRULE($.addingExpression);
+            var relationalNode = null;
+            var leftAddingNode, relationalOption;
+            leftAddingNode = $.SUBRULE($.addingExpression);
             $.OPTION(function() {
-                $.SUBRULE($.relationalOption);
-                $.SUBRULE2($.addingExpression);
+                relationalNode = new astNodes.RelationalExprNode($.SUBRULE($.relationalOption));
+                relationalNode.addChild(leftAddingNode);
+                relationalNode.addChild(($.SUBRULE2($.addingExpression)));
             });
 
-            // @formatter:on
+            if(relationalNode )
+                return relationalNode;
+            // shrink
+            return leftAddingNode;
         });
 
         this.addingExpression = this.RULE("addingExpression", function() {
-
-            $.SUBRULE($.multExpression);
+            var addingNode= null;
+            var leftNode, op;
+            leftNode = $.SUBRULE($.multExpression);
             $.MANY(function() {
                 $.OR([
-                    {ALT: function() { $.CONSUME(Minus) }},
-                    {ALT: function() { $.CONSUME(Plus) }}
+                    {ALT: function() { op = $.CONSUME(Minus) }},
+                    {ALT: function() { op = $.CONSUME(Plus) }}
                 ]);
-                $.SUBRULE2($.multExpression);
-            });
 
+                if (op instanceof Minus) {
+                    addingNode = new astNodes.AddingExprNode('Minus');
+                } else if (op instanceof Plus){
+                    addingNode = new astNodes.AddingExprNode('Plus');
+
+                }
+                //$.SUBRULE2($.multExpression);
+                addingNode.addChild(leftNode);
+                addingNode.addChild($.SUBRULE2($.multExpression));
+                leftNode  = addingNode;
+            });
+            if(addingNode )
+                return addingNode;
+            // shrink
+            return leftNode;
 
         });
 
         this.multExpression = this.RULE("multExpression", function() {
+            var multNode= null;
+            var leftNode, op;
+            leftNode = $.SUBRULE($.signExpression);
 
-            $.SUBRULE($.signExpression);
             $.MANY(function() {
 
                 $.OR([
-                    {ALT: function() { $.CONSUME(Mult) }},
-                    {ALT: function() { $.CONSUME(Div) }}
+                    {ALT: function() { op = $.CONSUME(Mult) }},
+                    {ALT: function() { op = $.CONSUME(Div) }}
                 ]);
-                $.SUBRULE2($.signExpression);
-            });
 
+                if (op instanceof Mult) {
+                    multNode = new astNodes.MultExprNode('mult');
+                } else {
+                    multNode = new astNodes.MultExprNode('div');
+
+                }
+                multNode.addChild(leftNode);
+                multNode.addChild($.SUBRULE2($.signExpression));
+                leftNode  = multNode;
+
+
+            });
+            if(multNode )
+                return multNode;
+            // shrink
+            return leftNode;
 
         });
 
         this.signExpression = this.RULE("signExpression", function() {
+            var signNode = null;
+            var exprElement, sign;
             $.OPTION(function() {
                 $.OR([
-                    {ALT: function() { $.CONSUME(Minus) }},
-                    {ALT: function() { $.CONSUME(Plus) }}
+                    {ALT: function() { sign = $.CONSUME(Minus) }},
+                    {ALT: function() { sign = $.CONSUME(Plus) }}
 
                 ]);
             });
-            $.SUBRULE($.expressionElement);
+            if (sign instanceof Minus) {
+                signNode = new astNodes.SignExprNode('-');
+            } else if (sign instanceof(Plus)){
+                signNode = new astNodes.SignExprNode('+');
 
+            }
+            exprElement = $.SUBRULE($.expressionElement);
 
+            if(signNode)
+            {
+                signNode.addChild(exprElement);
+                return signNode;
+            }
 
+            // shrink
+            return exprElement;
         });
 
         this.relationalOption = this.RULE("relationalOption", function() {
+            var relationalOption ;
             $.OR([
-                {ALT: function() { $.CONSUME(IsEqual) }},
-                {ALT: function() { $.CONSUME(IsNotEqual) }},
-                {ALT: function() { $.CONSUME(IsLike) }},
-                {ALT: function() { $.CONSUME(IsNotLike) }}
+                {ALT: function() { $.CONSUME(IsEqual); relationalOption = "IsEqual";}},
+                {ALT: function() { $.CONSUME(IsNotEqual); relationalOption = "IsNotEqual"; }},
+                {ALT: function() { $.CONSUME(IsLike); relationalOption = "IsLike"; }},
+                {ALT: function() { $.CONSUME(IsNotLike); relationalOption = "IsNotLike"; }}
 
             ]);
+            return relationalOption;
 
         });
 
@@ -230,31 +299,36 @@
 
         this.valueClause = this.RULE("valueClause", function() {
             //$.CONSUME(NumberLiteral);
+            var exprNode, value;
+
+
             $.OR([
-                {ALT: function() { $.CONSUME(Identifier) }},
-                {ALT: function() { $.CONSUME(NumberLiteral) }},
-                {ALT: function() { $.CONSUME(StringLiteral) }}
+                {ALT: function() { value = $.CONSUME(Identifier); exprNode =  new astNodes.IdentifierNode(); }},
+                {ALT: function() { value = $.CONSUME(NumberLiteral) ; exprNode =  new astNodes.LiteralNode(value.image, 'Number');}},
+                {ALT: function() { value = $.CONSUME(StringLiteral) ; exprNode = new astNodes.LiteralNode(value.image, 'String');}}
 
             ]);
+            return exprNode;
 
 
         });
 
         this.ruleFilterClause = this.RULE("ruleFilterClause", function() {
             //$.CONSUME(NumberLiteral);
+            var filterNode = new astNodes.FilterClauseNode();
             $.OR([
                 {ALT: function() { $.CONSUME(FilterBy) }},
                 {ALT: function() { $.CONSUME(Where) }}
             ]);
 
-            $.SUBRULE($.expression);
-
-
+            filterNode.addChild($.SUBRULE($.expression));
+            return filterNode;
 
         });
 
         this.groupByClause = this.RULE("groupByClause", function() {
             //$.CONSUME(NumberLiteral);
+            var groupNode = new astNodes.GroupClauseNode();
             $.OR([
                 {ALT: function() { $.CONSUME(GroupBy) }},
                 {ALT: function() { $.CONSUME(Per) }}
@@ -262,37 +336,51 @@
             $.CONSUME(Identifier);
             $.MANY(function() {
                 $.CONSUME(Comma);
-                $.CONSUME2(Identifier);
+                var identifierNode = $.CONSUME2(Identifier);
+                groupNode.addChild(identifierNode);
             });
-
+            return groupNode;
 
         });
 
 
         this.aggregationFunction = this.RULE("aggregationFunction", function() {
 
+            var functionNode, elementNode, filterNode, groupNode, name;
             $.OR([
-                {ALT: function() { $.CONSUME(Avg) }},
-                {ALT: function() { $.CONSUME(Sum) }}
+                {ALT: function() { name = $.CONSUME(Avg); }},
+                {ALT: function() { name =  $.CONSUME(Sum); }}
             ]);
+            // interpreter part
+            if (name instanceof Avg) {
+                functionNode = new astNodes.AggFunctionNode('Avg');
+            } else {
+                functionNode = new astNodes.AggFunctionNode('Sum');
+
+            }
             $.OR2([
                 {
                     ALT: function() {
                         $.CONSUME(LBr);
-                        $.SUBRULE($.valueClause);
+                        elementNode = $.SUBRULE($.valueClause);
                         $.CONSUME(RBr);
+
                     }
                 },
                 {ALT: function() { $.SUBRULE2($.valueClause);}}
-            ]);
-            $.OPTION(function() {
-                $.SUBRULE($.ruleFilterClause);
 
+            ]);
+            functionNode.addChild(elementNode);
+            $.OPTION(function() {
+                filterNode = $.SUBRULE($.ruleFilterClause);
+                functionNode.addChild(filterNode);
             });
             $.OPTION2(function() {
-                $.SUBRULE($.groupByClause);
+                groupNode = $.SUBRULE($.groupByClause);
+                functionNode.addChild(groupNode);
 
             });
+            return functionNode;
             // $.SUBRULE($.groupByClause); //=> TBD - why causes an error in my grammar?
             // $.SUBRULE($.ruleFilterClause); => TBD - why causes an error in my grammar?
             // @formatter:on
@@ -300,14 +388,16 @@
 
         this.concatenateFunction = this.RULE("concatenateFunction", function() {
 
+            var functionNode = astNodes.FunctionNode("concatenateFunction");
             $.CONSUME(Concatenate);
             $.CONSUME(LBr);
             $.SUBRULE($.valueClause);
             $.MANY(function() {
                 $.CONSUME(Comma);
-                $.SUBRULE2($.valueClause);
+                functionNode.addChild($.SUBRULE2($.valueClause));
             });
             $.CONSUME(RBr);
+           return functionNode;
             // @formatter:on
         });
 
@@ -335,7 +425,11 @@
             fullResult.ignored = lexResult.ignored;
             fullResult.lexErrors = lexResult.errors;
             var parser = new HrfParser(lexResult.tokens);
-            parser.expression();
+            var AST;
+            AST = parser.expression();
+            str = AST.serialize();
+
+            console.log(str);
             fullResult.parseErrors = parser.errors;
 
             if (fullResult.lexErrors.length >= 1 || fullResult.parseErrors.length >= 1) {
