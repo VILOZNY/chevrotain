@@ -7,25 +7,39 @@ lib = function() {
     /**
      * Base Hrf  ASTNode
      */
+    var BusinessDataType = {
+            Number : "Number",
+            String : "String",
+            TimeSpan : "TimeSpan",
+            Timestamp : "Timestamp",
+            Boolean : "Boolean",
+            Date : "Date",
+            Time : "Time"
+    };
+
 
     function ASTNode(kind) {
         this.kind = kind;
         this.children = [];
+        this.syntaxBox = [];
     }
 
     ASTNode.prototype.getKind = function getKind() {
 
-     return this.kind();
+     return this.kind;
      };
 
     ASTNode.prototype.addChild = function addChild(child) {
 
         this.children.push(child);
     };
+    ASTNode.prototype.addToSyntaxBox = function addToSyntaxBox(token) {
+
+        this.syntaxBox.push(token);
+    };
 
     ASTNode.prototype.serializeProps = function serializeProps(prefix) {
-
-    return "";
+        return "";
 
     }
 
@@ -36,6 +50,27 @@ lib = function() {
 
         if (this.children.length > 0) {
             str += ', ' + this.serializeChildren();
+        }
+
+        if (this.syntaxBox.length > 0) {
+            str = str + ',' + '"syntaxBox": [';
+            var idx = 0;
+            for (idx = 0; idx < this.syntaxBox.length; idx++) {
+                if (idx > 0) {
+                    str += ','
+                }
+                str += '{';
+                str = str + '"endColumn": "' + this.syntaxBox[idx].endColumn + '"';
+                str = str + ',' + '"endLine": "' + this.syntaxBox[idx].endLine + '"';
+                str = str + ',' + '"image": "' + this.syntaxBox[idx].image + '"';
+                //str = str + ',' + '"isInheritedInRecovery": "' + this.syntaxBox[idx].isInheritedInRecovery + '"';
+                str = str + ',' + '"startColumn": "' + this.syntaxBox[idx].startColumn + '"';
+                str = str + ',' + '"startLine": "' + this.syntaxBox[idx].startLine + '"';
+                str += '}';
+            }
+            str += ']';
+
+
         }
 
         str += '}';
@@ -63,7 +98,7 @@ lib = function() {
     function BaseExprNode(kind) {
         ASTNode.call(this, kind);
         this.isCollection = "";
-        this.businessType = [];
+        this.businessType;
     }
 
     BaseExprNode.prototype = Object.create(ASTNode.prototype);
@@ -74,10 +109,7 @@ lib = function() {
         return this.businessType;
     };
 
-    BaseExprNode.prototype.getBusinessType = function getBusinessType() {
 
-        return this.businessType;
-    };
 
     /*BaseExprNode.prototype.serializeProps = function serializeProps(prefix) {
 
@@ -89,6 +121,7 @@ lib = function() {
     function LogicalExprNode(logicalOp) {
         BaseExprNode.call(this, 'LogicalExprNode');
         this.logicalOp = logicalOp;
+        this.businessType = BusinessDataType.Boolean;
 
     }
 
@@ -112,6 +145,7 @@ lib = function() {
     function RelationalExprNode(relationalOption ) {
         BaseExprNode.call(this, 'RelationalExprNode');
         this.relationalOption = relationalOption;
+        this.businessType = BusinessDataType.Boolean;
 
     }
 
@@ -134,6 +168,7 @@ lib = function() {
     function AddingExprNode(operator ) {
         BaseExprNode.call(this, 'AddingExprNode');
         this.operator = operator;
+        this.businessType = BusinessDataType.Number;
 
     }
 
@@ -156,6 +191,7 @@ lib = function() {
     function MultExprNode(operator ) {
         BaseExprNode.call(this, 'MultExprNode');
         this.operator = operator;
+        this.businessType = BusinessDataType.Number;
 
     }
 
@@ -177,6 +213,7 @@ lib = function() {
     function SignExprNode(sign ) {
         BaseExprNode.call(this, 'SignExprNode');
         this.sign = sign;
+        this.businessType = BusinessDataType.Number;
 
     }
 
@@ -303,6 +340,7 @@ lib = function() {
     function StructNode(logicalOp) {
         BaseExprElementNode.call(this, 'StructNode');
         this.logicalOp = logicalOp;
+        this.businessType = BusinessDataType.Boolean;
 
     }
 
@@ -315,10 +353,10 @@ lib = function() {
      *  node for supporting (expression)
      *
      */
-    function BracketsExprNode(logicalOp) {
+    function BracketsExprNode() {
 
         BaseExprElementNode.call(this, 'BracketsExprNode');
-        this.logicalOp = logicalOp;
+
 
     }
 
@@ -326,6 +364,13 @@ lib = function() {
     BracketsExprNode.prototype = Object.create(BaseExprElementNode.prototype);
     BracketsExprNode.prototype.constructor = BracketsExprNode;
 
+    BracketsExprNode.prototype.getBusinessType = function getBusinessType() {
+        if (children.length > 0)
+            return children[0].getBusinessType();
+
+        return undefined;
+
+    };
 
     /**
      *   node for representing aggregation function (sum of, average...)
@@ -339,6 +384,14 @@ lib = function() {
 
     AggFunctionNode.prototype = Object.create(BaseExprFunctionNode.prototype);
     AggFunctionNode.prototype.constructor = AggFunctionNode;
+
+    AggFunctionNode.prototype.getBusinessType = function getBusinessType() {
+
+
+        // TBD - change according to function name
+        return BusinessDataType.Number;
+
+    };
 
 
     /**
@@ -400,6 +453,7 @@ lib = function() {
     module.exports.FilterClauseNode = FilterClauseNode;
     module.exports.AggFunctionNode = AggFunctionNode;
     module.exports.GroupClauseNode = GroupClauseNode;
+    module.exports.BusinessDataType = BusinessDataType;
 
 
        /* return {

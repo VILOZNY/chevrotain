@@ -11,6 +11,7 @@
     }
 }(this, function(chevrotain) {
     var astNodes = require('./hrf_AstNodes');
+    var hrfSemanticValidator =  require('./hrf_ASTSemanticValidator');
 // ----------------- lexer -----------------
     var extendToken = chevrotain.extendToken;
     var Lexer = chevrotain.Lexer;
@@ -36,7 +37,7 @@
     var True = extendToken("True", /true/);
     var False = extendToken("False", /false/);
     var Null = extendToken("Null", /null/);
-    var IsEqual = extendToken("IsEqual", /is equal to/);
+    var IsEqual = extendToken("IsEqual", /is\s+equal\s+to\s+/);
     var IsNotEqual = extendToken("IsNotEqual", /is not equal to/);
     var IsLike = extendToken("IsLike", /is like/);
     var IsNotLike = extendToken("IsNotLike", /is not like/);
@@ -107,9 +108,15 @@
                 {ALT: function() { exprElementNode = $.SUBRULE($.valueClause); }},
                 {ALT: function() { exprElementNode = $.SUBRULE($.expressionFunctionElement);}},
                 {ALT: function() {
-                    $.CONSUME(LBr);
-                    exprElementNode = $.SUBRULE($.expression);
-                    $.CONSUME(RBr);}}// TBD - grammar error
+                    var lBR = $.CONSUME(LBr);
+                    var exprNode = $.SUBRULE($.expression);
+                    var rBr = $.CONSUME(RBr);
+                    exprElementNode = new astNodes.BracketsExprNode();
+                    exprElementNode.addChild(exprNode);
+                    exprElementNode.addToSyntaxBox(lBR);
+                    exprElementNode.addToSyntaxBox(rBr);
+                    }}// TBD - grammar error
+
 
             ]);
 
@@ -131,17 +138,19 @@
 
         this.orExpression = this.RULE("orExpression", function() {
             var logicalNode = null;
-            var leftAndNode;
+            var leftAndNode, logicalOp;
             leftAndNode =  $.SUBRULE($.andExpression);
             $.MANY(function() {
-                $.CONSUME(Or);
+                logicalOp = $.CONSUME(Or);
 
                 logicalNode = new astNodes.LogicalExprNode("or");
                 logicalNode.addChild(leftAndNode);
                 logicalNode.addChild( $.SUBRULE2($.andExpression));
             });
-            if(logicalNode )
+            if(logicalNode ) {
+                logicalNode.addToSyntaxBox(logicalOp);
                 return logicalNode;
+            }
             // shrink
             return leftAndNode;
 
@@ -150,17 +159,19 @@
         this.andExpression = this.RULE("andExpression", function() {
 
             var logicalNode = null;
-            var leftRelationalNode;
+            var leftRelationalNode, logicalOp;
             leftRelationalNode = $.SUBRULE($.relationalExpression);
             $.MANY(function() {
-                $.CONSUME(And);
+                logicalOp = $.CONSUME(And);
                 logicalNode = new astNodes.LogicalExprNode("and");
                 logicalNode.addChild(leftRelationalNode);
                 logicalNode.addChild($.SUBRULE2($.relationalExpression));
             });
 
-            if(logicalNode )
+            if(logicalNode ) {
+                logicalNode.addToSyntaxBox(logicalOp);
                 return logicalNode;
+            }
             // shrink
             return leftRelationalNode;
         });
@@ -169,16 +180,19 @@
         this.relationalExpression = this.RULE("relationalExpression", function() {
 
             var relationalNode = null;
-            var leftAddingNode, relationalOption;
+            var leftAddingNode, relationalOptionResult;
             leftAddingNode = $.SUBRULE($.addingExpression);
             $.OPTION(function() {
-                relationalNode = new astNodes.RelationalExprNode($.SUBRULE($.relationalOption));
+                relationalOptionResult = $.SUBRULE($.relationalOption);
+                relationalNode = new astNodes.RelationalExprNode(relationalOptionResult.op);
                 relationalNode.addChild(leftAddingNode);
                 relationalNode.addChild(($.SUBRULE2($.addingExpression)));
             });
 
-            if(relationalNode )
+            if(relationalNode ) {
+                relationalNode.addToSyntaxBox(relationalOptionResult.token);
                 return relationalNode;
+            }
             // shrink
             return leftAddingNode;
         });
@@ -204,8 +218,10 @@
                 addingNode.addChild($.SUBRULE2($.multExpression));
                 leftNode  = addingNode;
             });
-            if(addingNode )
+            if(addingNode ) {
+                addingNode.addToSyntaxBox(op);
                 return addingNode;
+            }
             // shrink
             return leftNode;
 
@@ -223,6 +239,7 @@
                     {ALT: function() { op = $.CONSUME(Div) }}
                 ]);
 
+
                 if (op instanceof Mult) {
                     multNode = new astNodes.MultExprNode('mult');
                 } else {
@@ -235,8 +252,10 @@
 
 
             });
-            if(multNode )
+            if(multNode ) {
+                multNode.addToSyntaxBox(op);
                 return multNode;
+            }
             // shrink
             return leftNode;
 
@@ -252,6 +271,7 @@
 
                 ]);
             });
+
             if (sign instanceof Minus) {
                 signNode = new astNodes.SignExprNode('-');
             } else if (sign instanceof(Plus)){
@@ -262,6 +282,7 @@
 
             if(signNode)
             {
+                signNode.addToSyntaxBox(sign);
                 signNode.addChild(exprElement);
                 return signNode;
             }
@@ -271,12 +292,12 @@
         });
 
         this.relationalOption = this.RULE("relationalOption", function() {
-            var relationalOption ;
+            var relationalOption = {};
             $.OR([
-                {ALT: function() { $.CONSUME(IsEqual); relationalOption = "IsEqual";}},
-                {ALT: function() { $.CONSUME(IsNotEqual); relationalOption = "IsNotEqual"; }},
-                {ALT: function() { $.CONSUME(IsLike); relationalOption = "IsLike"; }},
-                {ALT: function() { $.CONSUME(IsNotLike); relationalOption = "IsNotLike"; }}
+                {ALT: function() { relationalOption.token = $.CONSUME(IsEqual); relationalOption.op = "IsEqual";}},
+                {ALT: function() { relationalOption.token = $.CONSUME(IsNotEqual); relationalOption.op = "IsNotEqual"; }},
+                {ALT: function() { relationalOption.token = $.CONSUME(IsLike); relationalOption.op = "IsLike"; }},
+                {ALT: function() { relationalOption.token = $.CONSUME(IsNotLike); relationalOption.op = "IsNotLike"; }}
 
             ]);
             return relationalOption;
@@ -303,11 +324,14 @@
 
 
             $.OR([
-                {ALT: function() { value = $.CONSUME(Identifier); exprNode =  new astNodes.IdentifierNode(); }},
+                {ALT: function() { value = $.CONSUME(Identifier); exprNode =  new astNodes.IdentifierNode(); exprNode.businessType = "String"; }},
                 {ALT: function() { value = $.CONSUME(NumberLiteral) ; exprNode =  new astNodes.LiteralNode(value.image, 'Number');}},
                 {ALT: function() { value = $.CONSUME(StringLiteral) ; exprNode = new astNodes.LiteralNode(value.image, 'String');}}
 
             ]);
+            if(exprNode) {
+                exprNode.addToSyntaxBox(value) ;
+            }
             return exprNode;
 
 
@@ -427,6 +451,8 @@
             var parser = new HrfParser(lexResult.tokens);
             var AST;
             AST = parser.expression();
+            var semanticValidator =   new hrfSemanticValidator.ASTSemanticValidator();
+            semanticValidator.validate(AST, null);
             str = AST.serialize();
 
             console.log(str);
