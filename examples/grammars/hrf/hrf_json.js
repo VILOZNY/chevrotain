@@ -12,6 +12,9 @@
 }(this, function(chevrotain) {
     var astNodes = require('./hrf_AstNodes');
     var hrfSemanticValidator =  require('./hrf_ASTSemanticValidator');
+    var terms = require('./terms');
+
+
 // ----------------- lexer -----------------
     var extendToken = chevrotain.extendToken;
     var Lexer = chevrotain.Lexer;
@@ -19,13 +22,21 @@
 
     var Identifier = extendToken("Identifier", /[a-zA-z]\w+/);
 
-    var dynamicTokens = [{name: "AttrStrTerm", regex: /name of the player/},
+    /*var dynamicTokens = [{name: "AttrStrTerm", regex: /name of the player/},
         {name: "AttrNumberTerm", regex: /age of the player/},
         {name: "AttrStrCollectionTerm", regex: /label of all payment_rcs of all payments of all players/},
-        {name: "AttrNumberCollectionTerm", regex: /amount of all payment_rcs of all payments of all players/}];
+        {name: "AttrNumberCollectionTerm", regex: /amount of all payment_rcs of all payments of all players/}];*/
+
+    var dynamicTokens = [];
 
     // tbd - loop on array and prepare array of extendToken, push to allTokens order improtand 
-
+    var dynamicToken ;
+    for (var key in terms) {
+        dynamicToken = {};
+        dynamicToken.name = key.replace(/\s/g, '');
+        dynamicToken.regex = new RegExp(key);
+        dynamicTokens.push(dynamicToken);
+    }
 
 // In ES6, custom inheritance implementation (such as 'extendToken(...)') can be replaced with simple "class X extends Y"...var True = extendToken("True", /true/);
     var Plus = extendToken("Plus", /\+/);
@@ -330,11 +341,11 @@
 
 
             $.OR([
-                {ALT: function() { value = $.CONSUME(Identifier); exprNode =  new astNodes.IdentifierNode();
-                    if (value.image === 'age of the player'
+                {ALT: function() { value = $.CONSUME(Identifier); exprNode =  new astNodes.IdentifierNode(terms[value.image]);
+                   /* if (value.image === 'age of the player'
                         || value.image === 'amount of all payment_rcs of all payments of all players')
                         {exprNode.businessType = "Number"}
-                        else {exprNode.businessType = "String";} }},
+                        else {exprNode.businessType = "String";} */}},
                 {ALT: function() { value = $.CONSUME(NumberLiteral) ; exprNode =  new astNodes.LiteralNode(value.image, 'Number');}},
                 {ALT: function() { value = $.CONSUME(StringLiteral) ; exprNode = new astNodes.LiteralNode(value.image, 'String');}}
 

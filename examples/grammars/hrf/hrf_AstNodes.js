@@ -279,13 +279,18 @@ lib = function() {
      *  node for representing vocabulary term (age of the player)
      *
      */
-    function IdentifierNode() {
+    function IdentifierNode(context) {
         BaseExprElementNode.call(this, 'IdentifierNode');
-        this.rootObject = "";
-        this.attribute = "";
-        this.associationArray = [];
-        this.modifiers = [];
-        this.scope = "";
+
+        if(context) {
+            this.businessType = context.businessType;
+            this.isCollection = context.isCollection;
+            this.rootObject = context.rootObject;
+            this.attribute = context.attribute;
+            this.associations = context.associations;
+            this.modifiers = context.modifiers;
+        }
+        //this.scope = context;
 
     }
 
@@ -301,11 +306,11 @@ lib = function() {
         var str = str + ',' + '"associationArray": [';
 
         var idx = 0;
-        for(idx = 0; idx < this.associationArray.length; idx++) {
+        for(idx = 0; idx < this.associations.length; idx++) {
             if (idx > 0) {
                 str += ','
             }
-            str += this.associationArray[idx];
+            str += this.associations[idx];
         }
         str += ']';
 
@@ -324,6 +329,9 @@ lib = function() {
 
         return str;
     };
+
+
+
 
     /**
      *  base node for representing a function

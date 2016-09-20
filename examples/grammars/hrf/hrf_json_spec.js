@@ -198,7 +198,7 @@ return*/
 
 
             // valid by grammar., no valid by semantic becasue of type
-            var inputText = 'average of label of all payment_rcs of all payments of all players is equal to 2';
+            var inputText = 'average of id of all payment_rcs of all payments of all players is equal to 2';
             var lexAndParseResult = parseHrf(inputText);
 
             assert.equal(lexAndParseResult.lexErrors.length, 0);
