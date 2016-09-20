@@ -41,6 +41,11 @@ lib = function() {
     ASTNode.prototype.serializeProps = function serializeProps(prefix) {
         return "";
 
+    };
+
+    ASTNode.prototype.accept = function accept(visitor, context) {
+        visitor.visit(this, context);
+
     }
 
     ASTNode.prototype.serialize = function serialize() {

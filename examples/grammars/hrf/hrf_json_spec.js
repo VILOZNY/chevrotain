@@ -4,6 +4,91 @@ var parseHrf = require("./hrf_json").parseHrf;
 
 describe('HRF JSON Grammar', function() {
 
+    it('HRF - parse,  orExpression + andExpression , valid syntax +  vailid semantic', function() {
+
+            // valid by grammar., no valid by semantic
+            var inputText = '5 is not equal to 3 and 7 + 3 is not equal to 8 or 5  is not equal to age of the player';
+            var lexAndParseResult = parseHrf(inputText);
+
+            assert.equal(lexAndParseResult.lexErrors.length, 0);
+            assert.equal(lexAndParseResult.parseErrors.length, 0);
+        }
+    );
+
+
+    it('HRF - parse,  orExpression , valid syntax +  invalid semantic', function() {
+
+            // valid by grammar., no valid by semantic
+            var inputText = '5 is not equal to  6 or 7 + 3 is not equal to 8 or age of the player';
+            try {
+                var lexAndParseResult = parseHrf(inputText);
+
+            }
+            catch(e) {
+                console.log(e)
+            };
+
+        }
+    );
+
+
+
+
+    it('HRF - parse,  orExpression , valid syntax +  invalid semantic', function() {
+
+            // valid by grammar., no valid by semantic
+            var inputText = '5 or 7 + 3 is not equal to 8 or 5  is not equal to age of the player';
+
+        try {
+            var lexAndParseResult = parseHrf(inputText);
+        }
+
+        catch(e) {
+            console.log(e)
+            }
+        }
+    );
+
+
+
+    it('HRF - parse,  andExpression , valid syntax +  invalid semantic', function() {
+
+            // valid by grammar., no valid by semantic
+            var inputText = '5 is not equal to 3 and 7 + 3 + 6 and 5  is not equal to age of the player';
+            try {
+                var lexAndParseResult = parseHrf(inputText);
+            }
+
+            catch(e) {
+                console.log(e)
+            };
+        }
+    );
+
+
+
+   it('HRF - parse,  andExpression , valid syntax +  semantic', function() {
+
+            // valid by grammar., no valid by semantic
+            var inputText = '5 is not equal to 3 and 7 + 3 is not equal to 8 and 5  is not equal to age of the player';
+            var lexAndParseResult = parseHrf(inputText);
+
+            assert.equal(lexAndParseResult.lexErrors.length, 0);
+            assert.equal(lexAndParseResult.parseErrors.length, 0);
+        }
+    );
+
+
+    it('HRF - parse,  andExpression , valid syntax + semantic', function() {
+
+            // valid by grammar., no valid by semantic
+            var inputText = '5 is not equal to 3 and 7 + 3 is not equal to 8';
+            var lexAndParseResult = parseHrf(inputText);
+
+            assert.equal(lexAndParseResult.lexErrors.length, 0);
+            assert.equal(lexAndParseResult.parseErrors.length, 0);
+        }
+    );
 
 
     it('HRF - parse,  simple, valid syntax, valid semantic', function() {

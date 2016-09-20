@@ -10,10 +10,13 @@ lib = function() {
      */
 
     function ASTSemanticValidator() {
-       /* this.kind = kind;
-        this.children = [];
-        this.syntaxBox = [];*/
+
     }
+
+    ASTSemanticValidator.prototype.visit = function visit(node, context) {
+
+        this.validate(node, context);
+    };
 
     ASTSemanticValidator.prototype.validate = function validate(node, context) {
 
@@ -23,6 +26,28 @@ lib = function() {
 
 
     ASTSemanticValidator.prototype.validateLogicalExprNode = function validateLogicalExprNode(node, context) {
+
+        var idx = 0;
+
+        while (idx < node.children.length) {
+            this.validate(node.children[0], context);
+            var childBusinessType = node.children[idx].getBusinessType()
+            if(childBusinessType !=  astNodes.BusinessDataType.Boolean)
+            {
+
+                if(idx === 0 ) {
+                    throw new Error("ASTSemanticValidator failure, unexpected logical operator '" + node.syntaxBox[0].image + "' after ' "
+                        + childBusinessType + '" expression in position ' + node.syntaxBox[idx].startColumn);
+                }
+                else {
+                    throw new Error("ASTSemanticValidator failure, unexpected operand, expected 'Boolean' and got '" + childBusinessType
+                         + '" expression,  before "' +  node.syntaxBox[0].image + '" in position ' + node.syntaxBox[idx-1].startColumn);
+
+                }
+
+            }
+            idx++;
+        }
 
     };
 
@@ -64,7 +89,7 @@ lib = function() {
             if (rightBusinessType != leftBusinessType) {
                 throw new Error("ASTSemanticValidator failure, mismatch Type after relational operator '" + node.syntaxBox[0].image + "'," +
                     " expected '" + leftBusinessType + "' instead of  '"
-                    + rightBusinessType + '" in position ' + (node.syntaxBox[0].startColumn + 1));
+                    + rightBusinessType + '" in position ' + (node.syntaxBox[0].startColumn +  node.syntaxBox[0].image.length));
 
             }
         }
@@ -138,27 +163,27 @@ lib = function() {
 
     ASTSemanticValidator.prototype.validateLiteralNode = function validateLiteralNode(node, context ) {
 
-        return true;
+
     };
 
 
 
     ASTSemanticValidator.prototype.validateIdentifierNode = function validateIdentifierNode(node, context ) {
 
-        return true;
+
     };
 
 
 
     ASTSemanticValidator.prototype.validateStructNode = function validateStructNode(node, context ) {
-        return true;
+
 
     };
 
 
     ASTSemanticValidator.prototype.validateBracketsExprNode = function validateBracketsExprNode(node, context) {
 
-        return true;
+        this.validate(node.children[0], context);
 
     };
 
@@ -166,27 +191,27 @@ lib = function() {
 
     ASTSemanticValidator.prototype.validateAggFunctionNode = function validateAggFunctionNode(node, context) {
 
-        return true;
+
     };
 
 
 
 
     ASTSemanticValidator.prototype.validateFunctionNode = function validateFunctionNode(node, context) {
-        return true;
+
 
     }
 
 
     ASTSemanticValidator.prototype.validateFilterClauseNode = function validateFilterClauseNode(node, context) {
-        return true;
+
 
     };
 
 
     ASTSemanticValidator.prototype.validateGroupClauseNode = function validateGroupClauseNode(node, context) {
 
-        return true;
+
     };
 
 

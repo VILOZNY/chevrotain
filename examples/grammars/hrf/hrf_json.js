@@ -142,13 +142,16 @@
             leftAndNode =  $.SUBRULE($.andExpression);
             $.MANY(function() {
                 logicalOp = $.CONSUME(Or);
+                if(!logicalNode) {
+                    logicalNode = new astNodes.LogicalExprNode("or");
+                    logicalNode.addChild(leftAndNode);
+                }
 
-                logicalNode = new astNodes.LogicalExprNode("or");
-                logicalNode.addChild(leftAndNode);
                 logicalNode.addChild( $.SUBRULE2($.andExpression));
+                logicalNode.addToSyntaxBox(logicalOp);
             });
             if(logicalNode ) {
-                logicalNode.addToSyntaxBox(logicalOp);
+
                 return logicalNode;
             }
             // shrink
@@ -163,13 +166,16 @@
             leftRelationalNode = $.SUBRULE($.relationalExpression);
             $.MANY(function() {
                 logicalOp = $.CONSUME(And);
-                logicalNode = new astNodes.LogicalExprNode("and");
-                logicalNode.addChild(leftRelationalNode);
+                if(!logicalNode) {
+                    logicalNode = new astNodes.LogicalExprNode("and");
+                    logicalNode.addChild(leftRelationalNode);
+                }
                 logicalNode.addChild($.SUBRULE2($.relationalExpression));
+                logicalNode.addToSyntaxBox(logicalOp);
             });
 
             if(logicalNode ) {
-                logicalNode.addToSyntaxBox(logicalOp);
+
                 return logicalNode;
             }
             // shrink
@@ -324,7 +330,11 @@
 
 
             $.OR([
-                {ALT: function() { value = $.CONSUME(Identifier); exprNode =  new astNodes.IdentifierNode(); exprNode.businessType = "String"; }},
+                {ALT: function() { value = $.CONSUME(Identifier); exprNode =  new astNodes.IdentifierNode();
+                    if (value.image === 'age of the player'
+                        || value.image === 'amount of all payment_rcs of all payments of all players')
+                        {exprNode.businessType = "Number"}
+                        else {exprNode.businessType = "String";} }},
                 {ALT: function() { value = $.CONSUME(NumberLiteral) ; exprNode =  new astNodes.LiteralNode(value.image, 'Number');}},
                 {ALT: function() { value = $.CONSUME(StringLiteral) ; exprNode = new astNodes.LiteralNode(value.image, 'String');}}
 
@@ -450,17 +460,24 @@
             fullResult.lexErrors = lexResult.errors;
             var parser = new HrfParser(lexResult.tokens);
             var AST;
+            //Grammar validation
             AST = parser.expression();
-            var semanticValidator =   new hrfSemanticValidator.ASTSemanticValidator();
-            semanticValidator.validate(AST, null);
-            str = AST.serialize();
-
-            console.log(str);
             fullResult.parseErrors = parser.errors;
-
+            // grammar error
             if (fullResult.lexErrors.length >= 1 || fullResult.parseErrors.length >= 1) {
                 throw new Error("sad sad panda")
             }
+            // valid ST
+            str = AST.serialize();
+            console.log(str);
+            /////////////////////////////////////
+            // sematic validation (type check)
+            /////////////////////////////////////
+            var semanticValidator =   new hrfSemanticValidator.ASTSemanticValidator();
+            AST.accept(semanticValidator, null);
+
+
+
             return fullResult;
         },
 
