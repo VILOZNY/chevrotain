@@ -4,15 +4,16 @@
         // Node. Does not work with strict CommonJS, but
         // only CommonJS-like environments that support module.exports,
         // like Node.
-        module.exports = factory(require('chevrotain'));
+        module.exports = factory(require('chevrotain'), require('./hrf_AstNodes'), require('./hrf_ASTSemanticValidator'), require('./terms'));
+       //module.exports = factory(require('./hrf_AstNodes'));
     } else {
         // Browser globals (root is window)
         root["HrfParser"] = factory(root.chevrotain).HrfParser;
     }
-}(this, function(chevrotain) {
-    var astNodes = require('./hrf_AstNodes');
-    var hrfSemanticValidator =  require('./hrf_ASTSemanticValidator');
-    var terms = require('./terms');
+}(this, function(chevrotain, astNodes, hrfSemanticValidator, terms) {
+   // var astNodes = require('./hrf_AstNodes');
+   // var hrfSemanticValidator =  require('./hrf_ASTSemanticValidator');
+   // var terms = require('./terms');
 
 
 // ----------------- lexer -----------------
