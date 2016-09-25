@@ -300,21 +300,21 @@ lib = function() {
 
     IdentifierNode.prototype.serializeProps = function serializeProps(prefix) {
         var str = prefix + '"businessType": "' + this.businessType + '"';
-        var str = str + ',' + '"isCollection": "' + this.isCollection + '"';
-        var str = str + ',' + '"rootObject": "' + this.rootObject + '"';
+        str = str + ',' + '"isCollection": "' + this.isCollection + '"';
+        str = str + ',' + '"rootObject": "' + this.rootObject + '"';
 
-        var str = str + ',' + '"associationArray": [';
+        str = str + ',' + '"associationArray": [';
 
         var idx = 0;
         for(idx = 0; idx < this.associations.length; idx++) {
             if (idx > 0) {
                 str += ','
             }
-            str += this.associations[idx];
+            str = str + '"' + this.associations[idx] + '"';
         }
         str += ']';
 
-        var str = ',' + '"modifiers": [';
+        str += ',' + '"modifiers": [';
 
         var idx = 0;
         for(idx = 0; idx < this.modifiers.length; idx++) {
@@ -345,6 +345,12 @@ lib = function() {
 
     BaseExprFunctionNode.prototype = Object.create(BaseExprElementNode.prototype);
     BaseExprFunctionNode.prototype.constructor = BaseExprFunctionNode;
+
+    BaseExprFunctionNode.prototype.serializeProps = function serializeProps(prefix) {
+        var str = prefix + '"functionName": "' + this.functionName + '"';
+
+        return str;
+    };
 
     /**
      *  node ofr supporting list of expression (with all / any of logiacl operations)
@@ -419,6 +425,15 @@ lib = function() {
 
     FunctionNode.prototype = Object.create(BaseExprFunctionNode.prototype);
     FunctionNode.prototype.constructor = FunctionNode;
+
+    FunctionNode.prototype.getBusinessType = function getBusinessType() {
+
+       if (this.name === "concatenate");
+        {
+            return BusinessDataType.String;
+        }
+        return "";
+    };
 
 
     /**

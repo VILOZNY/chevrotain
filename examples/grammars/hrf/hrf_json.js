@@ -50,6 +50,7 @@
     var False = extendToken("False", /false/);
     var Null = extendToken("Null", /null/);
     var IsEqual = extendToken("IsEqual", /is\s+equal\s+to\s+/);
+    var IsEqualSign = extendToken("IsEqualSign", /=/);
     var IsNotEqual = extendToken("IsNotEqual", /is not equal to/);
     var IsLike = extendToken("IsLike", /is like/);
     var IsNotLike = extendToken("IsNotLike", /is not like/);
@@ -87,7 +88,7 @@
     for (idx = 0; idx < dynamicTokens.length; idx++) {
         allTokens.push(extendToken(dynamicTokens[idx].name, dynamicTokens[idx].regex, Identifier));
     }
-    allTokens.push.apply(allTokens, [Plus, Minus, Div, Mult, And, Or, NumberLiteral, StringLiteral, Comma, Colon, True, False, Null, IsEqual, IsNotEqual, IsLike, IsNotLike, Avg, Sum, Concatenate, Where, FilterBy, GroupBy, Per, LBr, RBr]); //apply();
+    allTokens.push.apply(allTokens, [Plus, Minus, Div, Mult, And, Or, NumberLiteral, StringLiteral, Comma, Colon, True, False, Null, IsEqualSign, IsEqual, IsNotEqual, IsLike, IsNotLike, Avg, Sum, Concatenate, Where, FilterBy, GroupBy, Per, LBr, RBr]); //apply();
     allTokens.push(WhiteSpace);
     allTokens.push(Identifier);
 
@@ -139,13 +140,15 @@
             var functionNode;
             $.OR([
 
-                {ALT: function() { $.SUBRULE($.aggregationFunction); functionNode = new astNodes.AggFunctionNode("TBD aggregationFunction");}},
-                {ALT: function() { $.SUBRULE($.concatenateFunction); functionNode = new astNodes.FunctionNode("TBD concatenateFunction");}}
+                {ALT: function() { functionNode = $.SUBRULE($.aggregationFunction);}},
+                {ALT: function() {functionNode = $.SUBRULE($.functionElement);}}
 
             ] );
 
             return functionNode;
         });
+
+
 
 
         this.orExpression = this.RULE("orExpression", function() {
@@ -312,6 +315,7 @@
         this.relationalOption = this.RULE("relationalOption", function() {
             var relationalOption = {};
             $.OR([
+                {ALT: function() { relationalOption.token = $.CONSUME(IsEqualSign); relationalOption.op = "IsEqualSign";}},
                 {ALT: function() { relationalOption.token = $.CONSUME(IsEqual); relationalOption.op = "IsEqual";}},
                 {ALT: function() { relationalOption.token = $.CONSUME(IsNotEqual); relationalOption.op = "IsNotEqual"; }},
                 {ALT: function() { relationalOption.token = $.CONSUME(IsLike); relationalOption.op = "IsLike"; }},
@@ -363,8 +367,8 @@
             //$.CONSUME(NumberLiteral);
             var filterNode = new astNodes.FilterClauseNode();
             $.OR([
-                {ALT: function() { $.CONSUME(FilterBy) }},
-                {ALT: function() { $.CONSUME(Where) }}
+                {ALT: function() {  filterNode.addToSyntaxBox($.CONSUME(FilterBy)); }},
+                {ALT: function() {  filterNode.addToSyntaxBox($.CONSUME(Where));}}
             ]);
 
             filterNode.addChild($.SUBRULE($.expression));
@@ -400,22 +404,25 @@
             // interpreter part
             if (name instanceof Avg) {
                 functionNode = new astNodes.AggFunctionNode('Avg');
+
             } else {
                 functionNode = new astNodes.AggFunctionNode('Sum');
 
             }
-            $.OR2([
+            functionNode.addToSyntaxBox(name);
+            elementNode = $.SUBRULE($.valueClause);
+           /* $.OR2([
                 {
                     ALT: function() {
-                        $.CONSUME(LBr);
-                        elementNode = $.SUBRULE($.valueClause);
-                        $.CONSUME(RBr);
+                        functionNode.addToSyntaxBox($.CONSUME(LBr));
+                        elementNode = $.SUBRULE($.expression);
+                        functionNode.addToSyntaxBox($.CONSUME(RBr));
 
                     }
                 },
-                {ALT: function() { $.SUBRULE2($.valueClause);}}
+                {ALT: function() { $.SUBRULE2($.expression);}}
 
-            ]);
+            ]);*/
             functionNode.addChild(elementNode);
             $.OPTION(function() {
                 filterNode = $.SUBRULE($.ruleFilterClause);
@@ -432,17 +439,23 @@
             // @formatter:on
         });
 
+        this.functionElement = this.RULE("functionElement", function() {
+            var functionNode;
+            functionNode = $.SUBRULE($.concatenateFunction);
+            return functionNode;
+        });
+
         this.concatenateFunction = this.RULE("concatenateFunction", function() {
 
-            var functionNode = astNodes.FunctionNode("concatenateFunction");
-            $.CONSUME(Concatenate);
-            $.CONSUME(LBr);
-            $.SUBRULE($.valueClause);
+            var functionNode = new astNodes.FunctionNode("concatenate");
+            functionNode.addToSyntaxBox($.CONSUME(Concatenate));
+            functionNode.addToSyntaxBox($.CONSUME(LBr));
+            functionNode.addChild($.SUBRULE($.expression));
             $.MANY(function() {
-                $.CONSUME(Comma);
-                functionNode.addChild($.SUBRULE2($.valueClause));
+                functionNode.addToSyntaxBox($.CONSUME(Comma));
+                functionNode.addChild($.SUBRULE2($.expression));
             });
-            $.CONSUME(RBr);
+            functionNode.addToSyntaxBox($.CONSUME(RBr));
            return functionNode;
             // @formatter:on
         });

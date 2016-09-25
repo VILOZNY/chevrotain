@@ -4,6 +4,20 @@ var parseHrf = require("./hrf_json").parseHrf;
 
 describe('HRF JSON Grammar', function() {
 
+    it('HRF - parse, function cocncatnate , syntax + semantic valid', function() {
+
+
+
+            // valid by grammar., no valid by semantic becasue of type
+            var inputText = 'concatenate(\'Today is: \', \'9/1/2016\') = \'Today is: 9/1/2016\'';
+            var lexAndParseResult = parseHrf(inputText);
+
+            assert.equal(lexAndParseResult.lexErrors.length, 0);
+            assert.equal(lexAndParseResult.parseErrors.length, 0);
+        }
+    );
+
+
     it('HRF - parse,  orExpression + andExpression , valid syntax +  vailid semantic', function() {
 
             // valid by grammar., no valid by semantic
